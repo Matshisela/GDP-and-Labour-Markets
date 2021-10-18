@@ -1,0 +1,175 @@
+---
+title: "EDA- World GDP vs Labour Markets"
+author: "Ntandoyenkosi Matshisela"
+date: "18/10/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r packages}
+
+# Libraries
+
+
+suppressMessages(suppressWarnings(library(tidyverse)))
+suppressMessages(suppressWarnings(library(gapminder)))
+suppressMessages(suppressWarnings(library(cowplot)))
+suppressMessages(suppressWarnings(library(DT)))
+suppressMessages(suppressWarnings(library(downloadthis)))
+suppressMessages(suppressWarnings(library(ggstatsplot)))
+suppressMessages(suppressWarnings(library(plotly)))
+suppressMessages(suppressWarnings(library(WDI)))
+```
+
+## World Bank Indicators
+
+The World Bank has a data repository that has energy, education, financial etc
+indicators. For this analysis, 4 indicators will be extracted and an exploratory
+data analysis will be done. The four indicators of interest are Population,
+Unemployment, Labour (Total) and lastly the GDP in $US. To download an R package
+known as WDI will be used.
+
+To help in investigating the data, a simple feature engineering is done. The 
+percentage of the Working class (Labour force divided by Population) is 
+determined. 
+
+```{r }
+
+# Accessing World Bank Indicators
+data <- WDI(
+  country = "all",
+  indicator = c("Population" = "SP.POP.TOTL",  # Population
+                "Unemployment" = "SL.UEM.TOTL.ZS", # Unemployment, 
+                "Labour" ="SL.TLF.TOTL.IN", # Labour Force
+                "GDP in US$" = "NY.GDP.MKTP.CD"), # GDP in US$
+  start = 1960,
+  end = 2020,
+  extra = TRUE,
+  cache = NULL,
+  latest = NULL,
+  language = "en"
+)
+
+
+data1 <- data %>%
+  filter(region != "Aggregates" & year >= 1990) %>%
+  select(country, region, year, `GDP in US$`, Population, Unemployment, Labour) %>%
+  mutate(Working_class = Labour/Population) # Feature Engineering
+
+data1 %>%
+  datatable(extensions = 'Buttons',
+            options = list(dom = 'lfrtipB',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           lengthMenu = list(c(10,25,50,-1),
+                                             c(10,25,50,"All"))))
+
+```
+# Labour Markets
+
+As expected, countries with high populations have labour forces. China and India
+have recorded high population statistics over the last 30 years, although China 
+rate of increase has reduced drastically since 2005. China GDP is fast 
+approaching that of the US. The outlier points in GDP and Labour makes the data
+too clustered for one to carefully notice the movement of other countries. There
+are a lot of inferences that can be hypothesized or suspected, such as the 
+relationship between the 2 variables. 
+
+```{r, fig.height= 10, fig.width= 10}
+
+# Labour Plot
+x <- ggplot(data1, aes(`GDP in US$`, Labour, color = region)) +
+  geom_point(aes(size = Labour, frame = year, ids = country)) +
+  scale_x_log10() + theme_bw() + labs(title = "GDP vs Labour")
+
+ggplotly(x)
+
+```
+
+# Working Class
+
+I would like to investigate the percentage of the population that is independent.
+That is, the group of individuals that are working in each country. Well some 
+jobs pay far less than the poverty datum line, making one dependent to a parent
+or a spouse etc. Countries such as Qatar, United Arab Emirates, Singapore and 
+New Zealand have recorded high levels of migration of working class individuals
+in the last 30 years.
+
+```{r, fig.height= 10, fig.width= 10}
+
+# Working Class % 
+z <- ggplot(data1, aes(`GDP in US$`, Working_class, color = region)) +
+  geom_point(aes(size = Working_class, frame = year, ids = country)) +
+  scale_x_log10() + theme_bw() + labs(title = "GDP vs Working Class")
+
+ggplotly(z)
+
+```
+
+# Unemployment
+
+Around 2008 almost all countries recorded high levels of unemployment after the
+2008 market crash. It can be observed also that although South Africa has one
+of the highest GDP in Africa it has the highest percentages of unemplyment. 
+Some scholars attribute the crime rate to inequalities bedevilling the country. 
+China with the highest population in the world has one of the lowest unempoyment
+rates, more investigations can be explored here to translate lessons to other 
+nations.
+
+```{r, fig.height= 10, fig.width= 10}
+# Unemployment
+r <- ggplot(data1, aes(`GDP in US$`, Unemployment, color = region)) +
+  geom_point(aes(size = Unemployment, frame = year, ids = country)) +
+  scale_x_log10() + theme_bw() + labs(title = "GDP vs Unemployment")
+
+ggplotly(r)
+
+```
+
+Some scolars argue that GDP solves the unemployment crisis. To investigate this,
+the following analysis is conducted.
+
+```{r, fig.height= 10, fig.width= 10}
+
+set.seed(123) # reproducibility
+
+data2 <- data1 %>%
+  filter(year >= 1990)
+
+
+# plot
+grouped_ggscatterstats(
+  # arguments relevant for ggstatsplot::ggscatterstats
+  data = data2,
+  x = `GDP in US$`,
+  y = Unemployment,
+  grouping.var = region,
+  label.var = country,
+  label.expression = `GDP in US$` > 100000000000 & Unemployment > 27,
+  type = "r",
+  ggtheme = ggthemes::theme_tufte(),
+  # arguments relevant for ggstatsplot::combine_plots
+  annotation.args = list(
+    title = "Relationship between GDP and Unemployment",
+    caption = "Source: https://data.worldbank.org/indicator"
+  ),
+  plotgrid.args = list(nrow = 4, ncol = 2)
+)
+
+
+```
+
+It can be seen that there is no statistical evidence that GDP has an effect
+on unemployment in some regions in the world.
+
+This analysis exposed that the world has high labour markets and in cases with 
+lower or high paying, migration is recorded. The analysis further exposed the
+challenges of unemployment and that GDP has no effect on employment in some 
+countries, while in some, it has indeed shown improvement in this indicator.
