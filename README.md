@@ -1,1 +1,3 @@
 # GDP-and-Labour-Markets
+
+The World Bank has a data repository that has energy, education, financial etc indicators. For this analysis, 4 indicators will be extracted and an exploratory data analysis will be done. The four indicators of interest are Population, Unemployment, Labour (Total) and lastly the GDP in $US. To download an R package known as WDI will be used. This analysis exposed that the world has high labour markets and in cases with lower or high paying, migration is recorded. The analysis further exposed the challenges of unemployment and that GDP has no effect on employment in some countries, while in some, it has indeed shown improvement in this indicator.
